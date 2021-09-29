@@ -72,6 +72,8 @@ void read_from_csv(const std::string& inputFileName,
 
 void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
                      std::string cellIDstr,
+                     const edm4hep::CalorimeterHitCollection* const EB_calo_coll,
+                     const edm4hep::CalorimeterHitCollection* const EE_calo_coll,
                      const std::map<int, std::vector<int> > clusterMap, 
                      edm4hep::ClusterCollection* clusters){
   const BitFieldCoder bf(cellIDstr) ;
@@ -89,9 +91,11 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
       float energyErr = 0.f;
       auto position = edm4hep::Vector3f({0,0,0});
 
+      auto cluster = clusters->create();
       unsigned int maxEnergyIndex = 0;
       float maxEnergyValue = 0.f;
       //std::cout << "  layer = " << clLay.first << std::endl;
+
       for(auto index : clLay.second){
         //std::cout << "    " << index << std::endl;
         energy += calo_coll.at(index).getEnergy();
@@ -99,6 +103,10 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
         position.x += calo_coll.at(index).getPosition().x;
         position.y += calo_coll.at(index).getPosition().y;
         position.z += calo_coll.at(index).getPosition().z;
+        if( index < EB_calo_coll->size() )
+          cluster.addToHits(EB_calo_coll->at(index));
+        else
+          cluster.addToHits(EE_calo_coll->at(index - EB_calo_coll->size()));
 
         if (calo_coll.at(index).getEnergy() > maxEnergyValue) {
           maxEnergyValue = calo_coll.at(index).getEnergy();
@@ -106,7 +114,6 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
         }
       }
 
-      auto cluster = clusters->create();
       cluster.setEnergy(energy);
       cluster.setEnergyError(energyErr);
       // one could (should?) re-weight the barycentre with energy
