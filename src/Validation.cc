@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
          gPos3D[i][iName]->SetName(gNames3D[iName]);
        }
       }
-      const auto& EB_calo_coll = store.get<edm4hep::CalorimeterHitCollection>("EB_CaloHits_EDM4hep");
+      const auto& EB_calo_coll = store.get<edm4hep::CalorimeterHitCollection>("ECALBarrel");
       if( EB_calo_coll.isValid() ) {
         for(const auto& calo_hit_EB : EB_calo_coll){
           calo_coll->push_back(calo_hit_EB.clone());
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
       }
 
       std::cout << EB_calo_coll.size() << " caloHits in Barrel." << std::endl;
-      const auto& EE_calo_coll = store.get<edm4hep::CalorimeterHitCollection>("EE_CaloHits_EDM4hep");
+      const auto& EE_calo_coll = store.get<edm4hep::CalorimeterHitCollection>("ECALEndcap");
       if( EE_calo_coll.isValid() ) {
         for(const auto& calo_hit_EE : EE_calo_coll ){
           calo_coll->push_back(calo_hit_EE.clone());
