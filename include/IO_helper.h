@@ -123,12 +123,16 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
         position.y += calo_coll.at(index).getPosition().y;
         position.z += calo_coll.at(index).getPosition().z;
         if( EB_calo_coll->size() != 0){
-          if( index < EB_calo_coll->size() )
+          if( index < EB_calo_coll->size() ) {
             cluster.addToHits(EB_calo_coll->at(index));
-          else
+            cluster.addToHitContributions(1.0);
+          } else {
             cluster.addToHits(EE_calo_coll->at(index - EB_calo_coll->size()));
+            cluster.addToHitContributions(1.0);
+          }
         } else {
           cluster.addToHits(EE_calo_coll->at(index));
+          cluster.addToHitContributions(1.0);
         }
 
         if (calo_coll.at(index).getEnergy() > maxEnergyValue) {
