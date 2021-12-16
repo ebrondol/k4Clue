@@ -70,5 +70,4 @@ add_subdirectory(k4clue)
 set_source_files_properties(Validation.cc PROPERTIES LANGUAGE CXX)
 add_executable(validation Validation.cc)
 
-#target_compile_options(mainCuplaCPUTBB PRIVATE -DUSE_CUPLA -DFOR_TBB ${tbb_lib} -DUSE_EDM4HEP)
-target_link_libraries(validation PRIVATE EDM4HEP::edm4hep podio::podioRootIO DD4hep::DDCore)
+target_link_libraries(validation PRIVATE EDM4HEP::edm4hep podio::podioRootIO DD4hep::DDCore ROOT::Eve)

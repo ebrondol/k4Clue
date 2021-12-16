@@ -7,6 +7,8 @@
 #include <TGraph2D.h>
 #include <TFile.h>
 #include <TDirectory.h>
+#include <TEvePointSet.h>
+#include <TRandom.h>
 
 //EDM4HEP libraries
 #include "edm4hep/ClusterCollection.h"
@@ -19,27 +21,31 @@ using namespace DDSegmentation ;
 
 std::string bitFieldCoder = "system:0:5,side:5:-2,module:7:8,stave:15:4,layer:19:9,submodule:28:4,x:32:-16,y:48:-16" ;
 
-TH1F* h_clusters = new TH1F("Num_clusters","Num_clusters",100, 0, 100);
-TH1F* h_clSize   = new TH1F("Size","Size",100, 0, 100);
-TH1F* h_clEnergy = new TH1F("Energy","Energy",100, 0, 0.100);
+TH1F* h_clusters      = new TH1F("Num_clusters","Num_clusters",100, 0, 100);
+TH1F* h_clSize        = new TH1F("Size","Size",100, 0, 100);
+TH1F* h_clEnergy      = new TH1F("Energy","Energy",100, 0, 0.100);
 TH1F* h_clustersLayer = new TH1F("Num_clusters_layer","Num_clusters_layer",100, 0, 100);
 
-TH1F* h_clHitsLayer   = new TH1F("Num_clHits_layer","Num_clHits_layer",100, 0, 100);
+TH1F* h_clHitsLayer       = new TH1F("Num_clHits_layer","Num_clHits_layer",100, 0, 100);
 TH1F* h_clHitsEnergyLayer = new TH1F("Energy_layer","Energy_layer",100, 0, 100);
 
-TH1F* h_outliers           = new TH1F("Outliers","Outliers",100, 0, 100);
-TH1F* h_outliersLayer   = new TH1F("Num_outliers_layer","Num_outliers_layer",100, 0, 100);
+TH1F* h_outliers            = new TH1F("Outliers","Outliers",100, 0, 100);
+TH1F* h_outliersLayer       = new TH1F("Num_outliers_layer","Num_outliers_layer",100, 0, 100);
 TH1F* h_outliersEnergyLayer = new TH1F("Outliers_energy_layer","Outliers_energy_layer",100, 0, 100);
 
 std::map<int, std::vector<TGraph*>> gPos;
 std::map<int, std::vector<TGraph2D*>> gPos3D;
+std::map<int, std::vector<TEvePointSet*>> pointSet;
+
 std::vector<TString> gNames = {"Pos_clusters_XZ", "Pos_clusters_YZ",
                                "Pos_clHits_XZ", "Pos_clHits_YZ",
                                "Pos_outliers_XZ", "Pos_outliers_YZ"};
 std::vector<TString> gNames3D = {"Pos_clusters", "Pos_clHits", "Pos_outliers"};
+std::vector<TString> psNames3D = {"Ps_clusters", "Ps_clHits", "Ps_outliers"};
 
 void saveClustersAndCaloHits(const int nEvent, const edm4hep::ClusterCollection& cls,
-                             const edm4hep::CalorimeterHitCollection& allHits
+                             const edm4hep::CalorimeterHitCollection& allHits,
+                             std::map<std::string, std::array<float, 2> > minMaxParameters
                              ){
 
   int nClusters = 0;
@@ -47,6 +53,10 @@ void saveClustersAndCaloHits(const int nEvent, const edm4hep::ClusterCollection&
   int nOutliers = 0;
   int nClusterHits = 0;
   int ch_layer = 0;
+
+  double reweighted_x = 0;
+  double reweighted_y = 0;
+  double reweighted_z = 0;
 
   h_clusters->Fill(cls.size());
   std::vector<int> isOutlier (allHits.size());
@@ -60,12 +70,25 @@ void saveClustersAndCaloHits(const int nEvent, const edm4hep::ClusterCollection&
     gPos[nEvent][1]->SetPoint(nClusters, cl.getPosition().z, cl.getPosition().y);
     gPos3D[nEvent][0]->SetPoint(nClusters, cl.getPosition().z, cl.getPosition().x, cl.getPosition().y);
 
-    //std::cout << cl.getHits().size() << " caloHits in this cluster" << std::endl;
+    reweighted_x = cl.getPosition().x - minMaxParameters["x"][0];
+    reweighted_y = cl.getPosition().y - minMaxParameters["y"][0];
+    reweighted_z = cl.getPosition().z - minMaxParameters["z"][0];
+    pointSet[nEvent][0]->SetNextPoint(reweighted_z, reweighted_x, reweighted_y);
+    pointSet[nEvent][0]->SetPointId(new TNamed(Form("Point %d", nClusters), ""));
+
+    std::cout << cl.getHits().size() << " caloHits in this cluster" << std::endl;
     for (const auto& hit : cl.getHits()) {
       gPos[nEvent][2]->SetPoint(nClusterHits, hit.getPosition().z, hit.getPosition().x);
       gPos[nEvent][3]->SetPoint(nClusterHits, hit.getPosition().z, hit.getPosition().y);
       gPos3D[nEvent][1]->SetPoint(nClusterHits, hit.getPosition().z, hit.getPosition().x, hit.getPosition().y);
-      const BitFieldCoder bf(bitFieldCoder) ;
+
+      reweighted_x = hit.getPosition().x - minMaxParameters["x"][0];
+      reweighted_y = hit.getPosition().y - minMaxParameters["y"][0];
+      reweighted_z = hit.getPosition().z - minMaxParameters["z"][0];
+      pointSet[nEvent][1]->SetNextPoint(reweighted_z, reweighted_x, reweighted_y);
+      pointSet[nEvent][1]->SetPointId(new TNamed(Form("Point %d", nClusterHits), ""));
+
+      const BitFieldCoder bf(bitFieldCoder);
       ch_layer = bf.get( hit.getCellID(), "layer");
       h_clHitsLayer->Fill(ch_layer);
       h_clHitsEnergyLayer->Fill(ch_layer, hit.getEnergy());
@@ -86,6 +109,13 @@ void saveClustersAndCaloHits(const int nEvent, const edm4hep::ClusterCollection&
       gPos[nEvent][4]->SetPoint(nOutliers, allHits.at(iHit).getPosition().z, allHits.at(iHit).getPosition().x);
       gPos[nEvent][5]->SetPoint(nOutliers, allHits.at(iHit).getPosition().z, allHits.at(iHit).getPosition().y);
       gPos3D[nEvent][2]->SetPoint(nOutliers, allHits.at(iHit).getPosition().z, allHits.at(iHit).getPosition().x, allHits.at(iHit).getPosition().y);
+ 
+      reweighted_x = allHits.at(iHit).getPosition().x - minMaxParameters["x"][0];
+      reweighted_y = allHits.at(iHit).getPosition().y - minMaxParameters["y"][0];
+      reweighted_z = allHits.at(iHit).getPosition().z - minMaxParameters["z"][0];
+      pointSet[nEvent][2]->SetNextPoint(reweighted_z, reweighted_x, reweighted_y);
+      pointSet[nEvent][2]->SetPointId(new TNamed(Form("Point %d", nOutliers), ""));
+
       const BitFieldCoder bf(bitFieldCoder) ;
       ch_layer = bf.get( allHits.at(iHit).getCellID(), "layer");
       h_outliersLayer->Fill(ch_layer);
@@ -208,6 +238,11 @@ int main(int argc, char *argv[]) {
          gPos3D[i].push_back(g);
          gPos3D[i][iName]->SetName(gNames3D[iName]);
        }
+       for (int iName=0;iName<psNames3D.size();iName++) {
+         TEvePointSet* ps = new TEvePointSet(psNames3D[iName]);
+         ps->SetOwnIds(kTRUE);
+         pointSet[i].push_back(ps);
+       }
       }
       const auto& EB_calo_coll = store.get<edm4hep::CalorimeterHitCollection>("ECALBarrel");
       if( EB_calo_coll.isValid() ) {
@@ -234,7 +269,7 @@ int main(int argc, char *argv[]) {
       std::map<std::string, std::array<float, 2> > minMaxParameters;
       if( clusters.isValid() ) {
         minMaxParameters = searchMinMax(calo_coll);
-        saveClustersAndCaloHits(i, clusters, calo_coll);
+        saveClustersAndCaloHits(i, clusters, calo_coll, minMaxParameters);
       } else {
         throw std::runtime_error("Collection not found.");
       }
@@ -267,6 +302,9 @@ int main(int argc, char *argv[]) {
           gPos3D[i][iName]->Write();
           //h2->Write();
         }
+        for (int iName=0;iName<psNames3D.size();iName++) {
+          pointSet[i][iName]->Write();
+        }
 //        for (int l=0;l<maxLayer;l++) {
 //          hn[i][l]->Write();
 //        }
@@ -292,6 +330,32 @@ int main(int argc, char *argv[]) {
     h_outliers->Write();
     h_outliersLayer->Write();
     h_outliersEnergyLayer->Write();
+
+///////////
+/* This is just to try to save the PointSets in a hierarchical fashion
+ * more can be found in $ROOTSYS/tutorials/eve/
+//   TEveManager::Create();
+
+   if (!gRandom)
+      gRandom = new TRandom(0);
+   TRandom& r= *gRandom;
+
+   Float_t s = 100;
+
+   TEvePointSet* ps = new TEvePointSet("setpointrandom");
+   ps->SetOwnIds(kTRUE);
+
+   for(Int_t i = 0; i<512; i++)
+   {
+      ps->SetNextPoint(r.Uniform(-s,s), r.Uniform(-s,s), r.Uniform(-s,s));
+      ps->SetPointId(new TNamed(Form("Point %d", i), ""));
+   }
+
+   ps->SetMarkerSize(1.0);
+   ps->SetMarkerStyle(4);
+   ps->Write();
+*/
+///////////
 
     file.Close();
 
