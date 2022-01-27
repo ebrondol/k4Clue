@@ -70,6 +70,10 @@ void read_from_csv(const std::string& inputFileName,
   return;
 }
 
+void print(float v){
+  std::cout << v << " ";
+}
+
 void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
                      std::string cellIDstr,
                      const edm4hep::CalorimeterHitCollection* const EB_calo_coll,
@@ -117,8 +121,9 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
 
       for(auto index : clLay.second){
         //std::cout << "    " << index << std::endl;
+        //std::cout << "    en: " << calo_coll.at(index).getEnergy() << " +/- " << calo_coll.at(index).getEnergyError() << std::endl;
         energy += calo_coll.at(index).getEnergy();
-        energyErr += sqrt(calo_coll.at(index).getEnergyError()*calo_coll.at(index).getEnergyError());
+        energyErr += pow(calo_coll.at(index).getEnergyError()/(1.*calo_coll.at(index).getEnergy()), 2);
         position.x += calo_coll.at(index).getPosition().x;
         position.y += calo_coll.at(index).getPosition().y;
         position.z += calo_coll.at(index).getPosition().z;
@@ -142,11 +147,17 @@ void computeClusters(const edm4hep::CalorimeterHitCollection& calo_coll,
       }
 
       cluster.setEnergy(energy);
-      cluster.setEnergyError(energyErr);
+      cluster.setEnergyError(sqrt(energyErr));
       // one could (should?) re-weight the barycentre with energy
       cluster.setPosition({position.x/clLay.second.size(), position.y/clLay.second.size(), position.z/clLay.second.size()});
+      cluster.setPositionError({0.01, 0.01, 0.01, 0.01, 0.01, 0.01});
       cluster.setType(calo_coll.at(maxEnergyIndex).getType());
-      //std::cout << cluster.getHits().size() << " caloHits in this cluster" << std::endl;
+      //std::cout << "  cluster:"  << std::endl;
+      //std::cout << "    #hits : " << cluster.getHits().size() << std::endl;
+      //std::cout << "    en: " << cluster.getEnergy() << " +/- " << cluster.getEnergyError() << std::endl;
+      //std::cout << "    pos: " << cluster.getPosition() << " +/- " ;
+      //std::for_each(cluster.getPositionError().begin(), cluster.getPositionError().end(), print);
+      //std::cout << "\n" ;
     }
     clustersLayer.clear();
 
@@ -186,7 +197,7 @@ void computeCaloHits(const edm4hep::CalorimeterHitCollection& calo_coll,
       for(auto index : clLay.second){
         //std::cout << "    " << index << std::endl;
         energy += calo_coll.at(index).getEnergy();
-        energyErr += sqrt(calo_coll.at(index).getEnergyError()*calo_coll.at(index).getEnergyError());
+        energyErr += pow(calo_coll.at(index).getEnergyError()/(1.*calo_coll.at(index).getEnergy()), 2);
         position.x += calo_coll.at(index).getPosition().x;
         position.y += calo_coll.at(index).getPosition().y;
         position.z += calo_coll.at(index).getPosition().z;
@@ -200,7 +211,7 @@ void computeCaloHits(const edm4hep::CalorimeterHitCollection& calo_coll,
 
       auto cluster = clusters->create();
       cluster.setEnergy(energy);
-      cluster.setEnergyError(energyErr);
+      cluster.setEnergyError(sqrt(energyErr));
       // one could (should?) re-weight the barycentre with energy
       cluster.setPosition({position.x/clLay.second.size(), position.y/clLay.second.size(), position.z/clLay.second.size()});
       cluster.setCellID(calo_coll.at(maxEnergyIndex).getCellID());
