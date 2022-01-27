@@ -91,10 +91,22 @@ The input files are `data/input/*.root` with data in the EDM4HEP format
 * `ECALBarrel` and `ECALEndcap` CalorimeterHit collections are required
 CLUE parameters and input/output file name are contained in `clue_gaudi_wrapper.py`.
 
-The output file contains ClueClusters (currently also transformed as CaloHits).
+The output file contains CLUEClusters (currently also transformed as CaloHits) and outliers.
 
 If you encounter any error when compiling or running this project, please
 contact us.
+
+### Validation plots & clusters visualisation
+
+Plots on EDM4HEP Clusters, their correspondent Hits and Outliers can be produced with:
+```bash
+cd build/src
+#./validation [fileName] [outputFileName] [collectionName] [saveEachEvent]
+./validation fileName.root output_histo CLUEClusters 0
+```
+
+If  the flag `saveEachEvent` is enabled, you can visualise the `PSets` produced for each events with `macros/pointset_retrive.C`. 
+Be aware that on remote machines this visualisation tool is very slow, so not reccomended.
 
 ## 3. Run CLUE during the CLIC reconstruction
 
