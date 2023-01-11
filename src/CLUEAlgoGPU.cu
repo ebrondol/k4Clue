@@ -19,9 +19,11 @@ __global__ void kernel_compute_histogram( TILES &d_hist,
                                           )
 {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
+  printf("CLUEAlgoGPU::kernel_compute_histogram for i = %i\n", i);
   if(i < numberOfPoints) {
     // push index of points into tiles
     d_hist.fill(d_points.layer[i], d_points.x[i], d_points.y[i], d_points.phi[i], i);
+    printf("i = %i, x = %.2f, y = %.2f, layer = %i\n", i, d_points.x[i], d_points.y[i], d_points.layer[i]);
   }
 } //kernel
 
@@ -33,11 +35,13 @@ __global__ void kernel_calculate_density( TILES &d_hist,
 					  ) 
 { 
   int i = blockIdx.x * blockDim.x + threadIdx.x;
+  printf("CLUEAlgoGPU::kernel_calculate_density for i = %i\n", i);
   if (i < numberOfPoints){
     double rhoi{0.};
     int layeri = d_points.layer[i];
     float xi = d_points.x[i];
     float yi = d_points.y[i];
+    printf("i = %i, x = %.2f, y = %.2f, layer = %i\n", i, xi, yi, layeri);
 
     // get search box 
     auto lt = d_hist[layeri];
@@ -205,7 +209,7 @@ __global__ void kernel_assign_clusters( const GPU::VecArray<int,maxNSeeds>* d_se
 
 template<typename TILES>
 void CLUEAlgoGPU_T<TILES>::makeClusters( ) {
-
+  printf("CLUEAlgoGPU::makeClusters\n");
   copy_todevice();
   clear_set();
 
@@ -215,7 +219,10 @@ void CLUEAlgoGPU_T<TILES>::makeClusters( ) {
   ////////////////////////////////////////////
   const dim3 blockSize(1024,1,1);
   const dim3 gridSize(ceil(CLUEAlgo_T<TILES>::points_.n/static_cast<float>(blockSize.x)),1,1);
+  printf("CLUEAlgoGPU::kernel_compute_histogram\n");
   kernel_compute_histogram<<<gridSize,blockSize>>>(*d_hist, d_points, CLUEAlgo_T<TILES>::points_.n);
+  cudaDeviceSynchronize();
+  printf("CLUEAlgoGPU::kernel_calculate_density\n");
   kernel_calculate_density<<<gridSize,blockSize>>>(*d_hist, d_points, CLUEAlgo_T<TILES>::dc_, CLUEAlgo_T<TILES>::points_.n);
   kernel_calculate_distanceToHigher<<<gridSize,blockSize>>>(*d_hist, d_points,
 							    CLUEAlgo_T<TILES>::outlierDeltaFactor_, CLUEAlgo_T<TILES>::dc_,
