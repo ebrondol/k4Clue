@@ -160,7 +160,7 @@ private:
   void calculateLocalDensity();
   void calculateDistanceToHigher();
   void findAndAssignClusters();
-  inline float distance(int i, int j, bool isPhi = false, float r = 0.0) const ;
+  inline float distance(int i, int j, bool isPhi = false, float r = 0.0 ) const ;
   inline float distance2(int i, int j, bool isPhi = false, float r = 0.0) const ;
   TILES allLayerTiles_;
 
@@ -171,5 +171,6 @@ using CLICdetEndcapCLUEAlgo = CLUEAlgo_T<CLICdetEndcapLayerTiles>;
 using CLICdetBarrelCLUEAlgo = CLUEAlgo_T<CLICdetBarrelLayerTiles>;
 using CLDEndcapCLUEAlgo = CLUEAlgo_T<CLDEndcapLayerTiles>;
 using CLDBarrelCLUEAlgo = CLUEAlgo_T<CLDBarrelLayerTiles>;
+using LArBarrelCLUEAlgo = CLUEAlgo_T<LArBarrelLayerTiles>;
 
 #endif
