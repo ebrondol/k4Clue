@@ -49,7 +49,7 @@ public:
 
   // PODIO data service
   ServiceHandle<IDataProviderSvc> m_eventDataSvc;
-  PodioLegacyDataSvc* m_podioDataSvc;
+  PodioDataSvc* m_podioDataSvc;
 
   // Collections in output
   DataHandle<edm4hep::CalorimeterHitCollection> caloHitsHandle{"CLUEClustersAsHits", Gaudi::DataHandle::Writer, this};
