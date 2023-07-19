@@ -18,6 +18,12 @@ public:
   virtual StatusCode finalize() override final;
   virtual StatusCode initialize() override final;
 
+  // Timing analysis
+  void exclude_stats_outliers(std::vector<float> &v);
+  std::pair<float, float> stats(const std::vector<float> &v) ;
+  void printTimingReport(std::vector<float> &vals, int repeats,
+                       const std::string label) ;
+
   void fillCLUEPoints(std::vector<clue::CLUECalorimeterHit>& clue_hits);
   std::map<int, std::vector<int> > runAlgo(std::vector<clue::CLUECalorimeterHit>& clue_hits, 
                                            bool isBarrel);
@@ -46,6 +52,10 @@ public:
   std::vector<float> r;
   std::vector<int> layer;
   std::vector<float> weight;
+
+  // Timing analysis
+  int repeats = 1;
+  std::vector<float> vals;
 
   // PODIO data service
   ServiceHandle<IDataProviderSvc> m_eventDataSvc;

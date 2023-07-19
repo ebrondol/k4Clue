@@ -13,6 +13,7 @@
 #include "CLICdetBarrelLayerTilesConstants.h"
 #include "CLDEndcapLayerTilesConstants.h"
 #include "CLDBarrelLayerTilesConstants.h"
+#include "LArBarrelLayerTilesConstants.h"
 
 template <typename T>
 class LayerTiles_T {
@@ -114,11 +115,14 @@ class LayerTiles_T {
       }
     }
 
-
     std::vector<int>& operator[](int globalBinId) {
       return layerTiles_[globalBinId];
     }
     
+    const std::vector<int>& operator[](int globalBinId) const {
+      return layerTiles_[globalBinId];
+    }
+
     const std::vector<int>& operator[](int globalBinId) const {
       return layerTiles_[globalBinId];
     }
@@ -145,6 +149,9 @@ namespace clue {
   using CLDBarrelLayerTile = LayerTiles_T<CLDBarrelLayerTilesConstants>;
   using CLDBarrelTiles = std::array<CLDBarrelLayerTile, CLDBarrelLayerTilesConstants::nLayers>;
 
+  using LArBarrelLayerTile = LayerTiles_T<LArBarrelLayerTilesConstants>;
+  using LArBarrelTiles = std::array<LArBarrelLayerTile, LArBarrelLayerTilesConstants::nLayers>;
+
 } // end clue namespace
 
 template <typename T>
@@ -167,5 +174,6 @@ using CLICdetEndcapLayerTiles = GenericTile<clue::CLICdetEndcapTiles>;
 using CLICdetBarrelLayerTiles = GenericTile<clue::CLICdetBarrelTiles>;
 using CLDEndcapLayerTiles = GenericTile<clue::CLDEndcapTiles>;
 using CLDBarrelLayerTiles = GenericTile<clue::CLDBarrelTiles>;
+using LArBarrelLayerTiles = GenericTile<clue::LArBarrelTiles>;
 
 #endif //LayerTiles_h
