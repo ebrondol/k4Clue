@@ -261,18 +261,6 @@ inline float CLUEAlgo_T<TILES>::distance2(int i, int j, bool isPhi, float r ) co
 }
 
 template <typename TILES>
-inline float CLUEAlgo_T<TILES>::distance2(int i, int j, bool isPhi, float r ) const {
-
-  // 2-d distance on the layer
-  if(points_.layer[i] == points_.layer[j] ) {
-    return std::sqrt(distance2(i, j, isPhi, r));
-  } else {
-    return std::numeric_limits<float>::max();
-  }
-
-}
-
-template <typename TILES>
 inline float CLUEAlgo_T<TILES>::distance(int i, int j, bool isPhi, float r ) const {
 
   // 2-d distance on the layer

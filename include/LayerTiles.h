@@ -123,10 +123,6 @@ class LayerTiles_T {
       return layerTiles_[globalBinId];
     }
 
-    const std::vector<int>& operator[](int globalBinId) const {
-      return layerTiles_[globalBinId];
-    }
-
   private:
     std::vector< std::vector<int>> layerTiles_;
 
