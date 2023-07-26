@@ -9,6 +9,7 @@
 #include <edm4hep/CalorimeterHitCollection.h>
 #include <edm4hep/ClusterCollection.h>
 #include "CLUECalorimeterHit.h"
+#include "CLUEAlgo.h"
 
 class ClueGaudiAlgorithmWrapper : public GaudiAlgorithm {
 public:
@@ -46,6 +47,10 @@ public:
   std::vector<float> r;
   std::vector<int> layer;
   std::vector<float> weight;
+
+  // CLUE Algo
+  CLICdetBarrelCLUEAlgo clueAlgoBarrel_;
+  CLICdetEndcapCLUEAlgo clueAlgoEndcap_;
 
   // PODIO data service
   ServiceHandle<IDataProviderSvc> m_eventDataSvc;
