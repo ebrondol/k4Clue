@@ -25,7 +25,7 @@ struct LArBarrelLayerTilesConstants {
   static constexpr float rX = nColumns/(maxX-minX);
   static constexpr float rY = nRows/(maxY-minY);
 
-  static constexpr int nTiles = nColumns * nRows;
+  static constexpr int nTiles = nColumnsPhi * nRows;
 
   static constexpr int nLayers = 12;
   static constexpr bool endcap = false;
