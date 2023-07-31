@@ -58,10 +58,6 @@ public:
   LArBarrelCLUEAlgo clueAlgoBarrel_;
   CLICdetEndcapCLUEAlgo clueAlgoEndcap_;
 
-  // Timing analysis
-  int repeats = 1;
-  std::vector<float> vals;
-
   // PODIO data service
   ServiceHandle<IDataProviderSvc> m_eventDataSvc;
   PodioDataSvc* m_podioDataSvc;
