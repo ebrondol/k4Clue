@@ -1,20 +1,21 @@
-#ifndef CLICdetBarrelLayerTilesConstants_h
-#define CLICdetBarrelLayerTilesConstants_h
+/**
+ * Variables meaning is specified in
+ * include/readme.md
+*/
+
+#ifndef LArBarrelLayerTilesConstants_h
+#define LArBarrelLayerTilesConstants_h
 
 #include "constexpr_cmath.h"
 #include <array>
 
-struct CLICdetBarrelLayerTilesConstants {
+struct LArBarrelLayerTilesConstants {
 
-  // Global r*phi coordinate
-  static constexpr float minX =  -6000.f;
-  static constexpr float maxX =   6000.f;
-
-  // Global z coordinate
-  static constexpr float minY =  -2210.f;
-  static constexpr float maxY =   2210.f;
-
-  static constexpr float tileSize = 35.f;
+  static constexpr float minX =  -8700.f;
+  static constexpr float maxX =   8700.f;
+  static constexpr float minY =  -3110.f;
+  static constexpr float maxY =   3110.f;
+  static constexpr float tileSize = 50.f;
   static constexpr float tileSizePhi = 0.15f;
   static constexpr int nColumns = reco::ceil((maxX-minX)/tileSize);
   static constexpr int nColumnsPhi = reco::ceil(2. * M_PI / tileSizePhi);
@@ -26,8 +27,10 @@ struct CLICdetBarrelLayerTilesConstants {
 
   static constexpr int nTiles = nColumnsPhi * nRows;
 
-  static constexpr int nLayers = 40;
+  static constexpr int nLayers = 12;
   static constexpr bool endcap = false;
 };
 
-#endif // CLICdetBarrelLayerTilesConstants_h
+#endif // LArBarrelLayerTilesConstants_h
+
+

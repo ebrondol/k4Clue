@@ -19,11 +19,22 @@ template <typename TILES>
 class CLUEAlgo_T {
 
 public:
+  CLUEAlgo_T() {
+    dc_ = 0.0;
+    rhoc_ = 0.0;
+    outlierDeltaFactor_ = 0.0;
+    verbose_ = false;
+  }
   CLUEAlgo_T(float dc, float rhoc, float outlierDeltaFactor, bool verbose) {
     dc_ = dc; 
     rhoc_ = rhoc;
     outlierDeltaFactor_ = outlierDeltaFactor;
     verbose_ = verbose;
+    if(verbose_){
+      std::cout << "ClueGaudiAlgorithmWrapper: nTiles (cols,rows):     " << TILES::constants_type_t::nTiles ;
+      std::cout << " (" << (TILES::constants_type_t::endcap ? TILES::constants_type_t::nColumns : TILES::constants_type_t::nColumnsPhi);
+      std::cout << "," << TILES::constants_type_t::nRows << " )\n";
+    }
   }
   ~CLUEAlgo_T(){} 
     
@@ -33,7 +44,7 @@ public:
     
   Points points_;
   
-  bool setPoints(int n, float* x, float* y, int* layer, float* weight, float* r = NULL) {
+  bool clearAndSetPoints(int n, float* x, float* y, int* layer, float* weight, float* r = NULL) {
     points_.clear();
     // input variables
     for(int i=0; i<n; ++i)
@@ -94,7 +105,11 @@ public:
   }
 
   void clearPoints(){ points_.clear(); }
-
+  void clearLayerTiles(){
+    for(unsigned i = 0; i < TILES::constants_type_t::nLayers; i++) {
+      allLayerTiles_[i].clear();
+    }
+  }
   void makeClusters();
   std::map<int, std::vector<int> > getClusters();
   Points const getPoints() const { return points_; };
@@ -145,12 +160,13 @@ public:
         
 private:
   // private member methods
-  void prepareDataStructures(TILES & );
-  void calculateLocalDensity(TILES & );
-  void calculateDistanceToHigher(TILES & );
+  void prepareDataStructures();
+  void calculateLocalDensity();
+  void calculateDistanceToHigher();
   void findAndAssignClusters();
   inline float distance(int i, int j, bool isPhi = false, float r = 0.0) const ;
   inline float distance2(int i, int j, bool isPhi = false, float r = 0.0) const ;
+  TILES allLayerTiles_;
 
 };
 
@@ -159,5 +175,6 @@ using CLICdetEndcapCLUEAlgo = CLUEAlgo_T<CLICdetEndcapLayerTiles>;
 using CLICdetBarrelCLUEAlgo = CLUEAlgo_T<CLICdetBarrelLayerTiles>;
 using CLDEndcapCLUEAlgo = CLUEAlgo_T<CLDEndcapLayerTiles>;
 using CLDBarrelCLUEAlgo = CLUEAlgo_T<CLDBarrelLayerTiles>;
+using LArBarrelCLUEAlgo = CLUEAlgo_T<LArBarrelLayerTiles>;
 
 #endif

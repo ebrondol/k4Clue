@@ -49,11 +49,12 @@ StatusCode CLUENtuplizer::initialize() {
 
 StatusCode CLUENtuplizer::execute() {
 
-  DataHandle<edm4hep::EventHeaderCollection> ev_handle {
-    "EventHeader", Gaudi::DataHandle::Reader, this};
-  auto evs = ev_handle.get();
-  evNum = (*evs)[0].getEventNumber();
-  info() << "Event number = " << evNum << endmsg;
+//  DataHandle<edm4hep::EventHeaderCollection> ev_handle {
+//    "EventHeader", Gaudi::DataHandle::Reader, this};
+//  auto evs = ev_handle.get();
+//  evNum = (*evs)[0].getEventNumber();
+  evNum = 0;
+//  info() << "Event number = " << evNum << std::endl;
 
   DataHandle<edm4hep::MCParticleCollection> mcp_handle {
     "MCParticles", Gaudi::DataHandle::Reader, this};
@@ -73,6 +74,7 @@ StatusCode CLUENtuplizer::execute() {
     warning() << "This event is skipped because there are " << mcps_primary << " primary MC particles." << endmsg;
     return StatusCode::SUCCESS;
   }
+
 
   DataObject* pStatus  = nullptr;
   StatusCode  scStatus = eventSvc()->retrieveObject("/Event/CLUECalorimeterHitCollection", pStatus);
@@ -105,7 +107,7 @@ StatusCode CLUENtuplizer::execute() {
   std::uint64_t totSize = 0;
   bool foundInECAL = false;
 
-  debug() << "Cluster Collection size = " << (*cluster_coll).size() << endmsg;
+  info() << ClusterCollectionName << " : Total number of clusters =  " << int( cluster_coll->size() ) << endmsg;
   for (const auto& cl : *cluster_coll) {
     m_clusters_event->push_back (evNum);
     m_clusters_energy->push_back (cl.getEnergy());
@@ -120,6 +122,7 @@ StatusCode CLUENtuplizer::execute() {
     int maxLayer = 0;
     for (const auto& hit : cl.getHits()) {
       foundInECAL = false;
+/*
       for (const auto& clEB : *EB_calo_coll) {
         if( clEB.getCellID() == hit.getCellID()){
           foundInECAL = true;
@@ -144,6 +147,7 @@ StatusCode CLUENtuplizer::execute() {
         }
       }
       if(foundInECAL){
+*/
         ch_layer = bf.get( hit.getCellID(), "layer");
         maxLayer = std::max(int(ch_layer), maxLayer);
         //info() << "  ch cellID : " << hit.getCellID()
@@ -157,14 +161,18 @@ StatusCode CLUENtuplizer::execute() {
         m_clhits_energy->push_back (hit.getEnergy());
         totEnergyHits += hit.getEnergy();
         totSize += 1;
+/*
       } else {
         debug() << "  This calo hit was NOT found among ECAL hits (cellID : " << hit.getCellID()
                << ", layer : " << ch_layer   
                << ", energy : " << hit.getEnergy() << " )" << endmsg; 
       }
+*/
     }
     nClusters++;
-    totEnergy += cl.getEnergy();
+    if(!std::isnan(cl.getEnergy())){
+      totEnergy += cl.getEnergy();
+    }
     m_clusters_maxLayer->push_back (maxLayer);
 
   }
@@ -198,6 +206,7 @@ StatusCode CLUENtuplizer::execute() {
     m_hits_rho->push_back (clue_hit.getRho());
     m_hits_delta->push_back (clue_hit.getDelta());
     m_hits_energy->push_back (clue_hit.getEnergy());
+    m_hits_MCEnergy->push_back (mcp_primary_energy);
 
     if(clue_hit.isFollower()){
       m_hits_status->push_back(1);
@@ -237,6 +246,7 @@ void CLUENtuplizer::initializeTrees() {
   m_hits_rho = new std::vector<float>();
   m_hits_delta = new std::vector<float>();
   m_hits_energy = new std::vector<float>();
+  m_hits_MCEnergy = new std::vector<float>();
 
   t_hits->Branch ("event", &m_hits_event);
   t_hits->Branch ("region", &m_hits_region);
@@ -250,6 +260,7 @@ void CLUENtuplizer::initializeTrees() {
   t_hits->Branch ("rho", &m_hits_rho);
   t_hits->Branch ("delta", &m_hits_delta);
   t_hits->Branch ("energy", &m_hits_energy);
+  t_hits->Branch ("MCEnergy", &m_hits_MCEnergy);
 
   m_clusters          = new std::vector<int>();
   m_clusters_event    = new std::vector<int>();
@@ -307,6 +318,7 @@ void CLUENtuplizer::cleanTrees() {
   m_hits_rho->clear();
   m_hits_delta->clear();
   m_hits_energy->clear();
+  m_hits_MCEnergy->clear();
 
   m_clusters->clear();
   m_clusters_event->clear();
