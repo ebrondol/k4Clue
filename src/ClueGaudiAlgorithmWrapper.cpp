@@ -25,7 +25,7 @@ ClueGaudiAlgorithmWrapper::ClueGaudiAlgorithmWrapper(const std::string& name, IS
 StatusCode ClueGaudiAlgorithmWrapper::initialize() {
 
   auto start = std::chrono::high_resolution_clock::now();
-  clueAlgoBarrel_ = LArBarrelCLUEAlgo(dc, rhoc, outlierDeltaFactor, true);
+  clueAlgoBarrel_ = CLICdetBarrelCLUEAlgo(dc, rhoc, outlierDeltaFactor, true);
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "ClueGaudiAlgorithmWrapper: Set up time (Barrel): " << elapsed.count() * 1000 << " ms\n";
@@ -343,10 +343,7 @@ StatusCode ClueGaudiAlgorithmWrapper::execute() {
   } else {
     throw std::runtime_error("Collection not found.");
   }
-<<<<<<< HEAD
-=======
-  info() << EB_calo_coll->size() << " caloHits in " << EBCaloCollectionName << "." << endmsg;
->>>>>>> optimize_printout
+  info() << EB_calo_coll->size() << " caloHits in ECAL Barrel." << endmsg;
 
   // Run CLUE in the barrel
   if(!clue_hit_coll_barrel.vect.empty()){
@@ -356,13 +353,8 @@ StatusCode ClueGaudiAlgorithmWrapper::execute() {
   
     clue_hit_coll.vect.insert(clue_hit_coll.vect.end(), clue_hit_coll_barrel.vect.begin(), clue_hit_coll_barrel.vect.end());
 
-<<<<<<< HEAD
     fillFinalClusters(clue_hit_coll_barrel.vect, clueClustersBarrel, finalClusters.get());
-    debug() << "Saved " << finalClusters->size() << " clusters using ECAL Barrel hits" << endmsg;
-=======
-    fillFinalClusters(clue_hit_coll_barrel.vect, clueClustersBarrel, finalClusters);
-    info() << "Saved " << finalClusters->size() << " clusters using " << EBCaloCollectionName << endmsg;
->>>>>>> optimize_printout
+    info() << "Saved " << finalClusters->size() << " clusters using ECAL Barrel hits" << endmsg;
 
   }
 
@@ -383,11 +375,7 @@ StatusCode ClueGaudiAlgorithmWrapper::execute() {
   } else {
     throw std::runtime_error("Collection not found.");
   }
-<<<<<<< HEAD
   debug() << EE_calo_coll->size() << " caloHits in ECAL Endcap" << endmsg;
-=======
-  info() << EE_calo_coll->size() << " caloHits in " << EECaloCollectionName << "." << endmsg;
->>>>>>> optimize_printout
 
   // Run CLUE in the endcap
   if(!clue_hit_coll_endcap.vect.empty()){
@@ -396,13 +384,8 @@ StatusCode ClueGaudiAlgorithmWrapper::execute() {
   
     clue_hit_coll.vect.insert(clue_hit_coll.vect.end(), clue_hit_coll_endcap.vect.begin(), clue_hit_coll_endcap.vect.end());
 
-<<<<<<< HEAD
     fillFinalClusters(clue_hit_coll_endcap.vect, clueClustersEndcap, finalClusters.get());
-    debug() << "Saved " << finalClusters->size() << " clusters using ECAL Endcap hits" << endmsg;
-=======
-    fillFinalClusters(clue_hit_coll_endcap.vect, clueClustersEndcap, finalClusters);
-    info() << "Saved " << finalClusters->size() << " clusters using " << EECaloCollectionName << endmsg;
->>>>>>> optimize_printout
+    info() << "Saved " << finalClusters->size() << " clusters using ECAL Endcap hits" << endmsg;
 
   }
 
