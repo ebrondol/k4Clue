@@ -49,12 +49,11 @@ StatusCode CLUENtuplizer::initialize() {
 
 StatusCode CLUENtuplizer::execute() {
 
-//  DataHandle<edm4hep::EventHeaderCollection> ev_handle {
-//    "EventHeader", Gaudi::DataHandle::Reader, this};
-//  auto evs = ev_handle.get();
-//  evNum = (*evs)[0].getEventNumber();
-  evNum = 0;
-//  info() << "Event number = " << evNum << std::endl;
+  DataHandle<edm4hep::EventHeaderCollection> ev_handle {
+    "EventHeader", Gaudi::DataHandle::Reader, this};
+  auto evs = ev_handle.get();
+  evNum = (*evs)[0].getEventNumber();
+  info() << "Event number = " << evNum << std::endl;
 
   DataHandle<edm4hep::MCParticleCollection> mcp_handle {
     "MCParticles", Gaudi::DataHandle::Reader, this};
