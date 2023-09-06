@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2020-2023 Key4hep-Project.
+ *
+ * This file is part of Key4hep.
+ * See https://key4hep.github.io/key4hep-doc/ for further info.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include "CLUENtuplizer.h"
 
 // podio specific includes
@@ -176,7 +194,9 @@ StatusCode CLUENtuplizer::execute() {
       }
     }
     nClusters++;
-    totEnergy += cl.getEnergy();
+    if(!std::isnan(cl.getEnergy())){
+      totEnergy += cl.getEnergy();
+    }
     m_clusters_maxLayer->push_back (maxLayer);
 
   }
@@ -209,6 +229,7 @@ StatusCode CLUENtuplizer::execute() {
     m_hits_rho->push_back (clue_hit.getRho());
     m_hits_delta->push_back (clue_hit.getDelta());
     m_hits_energy->push_back (clue_hit.getEnergy());
+    m_hits_MCEnergy->push_back (mcp_primary_energy);
 
     if(clue_hit.isFollower()){
       m_hits_status->push_back(1);
@@ -249,6 +270,7 @@ void CLUENtuplizer::initializeTrees() {
   m_hits_rho = new std::vector<float>();
   m_hits_delta = new std::vector<float>();
   m_hits_energy = new std::vector<float>();
+  m_hits_MCEnergy = new std::vector<float>();
 
   t_hits->Branch ("event", &m_hits_event);
   t_hits->Branch ("region", &m_hits_region);
@@ -262,6 +284,7 @@ void CLUENtuplizer::initializeTrees() {
   t_hits->Branch ("rho", &m_hits_rho);
   t_hits->Branch ("delta", &m_hits_delta);
   t_hits->Branch ("energy", &m_hits_energy);
+  t_hits->Branch ("MCEnergy", &m_hits_MCEnergy);
 
   m_clusters          = new std::vector<int>();
   m_clusters_event    = new std::vector<int>();
@@ -319,6 +342,7 @@ void CLUENtuplizer::cleanTrees() {
   m_hits_rho->clear();
   m_hits_delta->clear();
   m_hits_energy->clear();
+  m_hits_MCEnergy->clear();
 
   m_clusters->clear();
   m_clusters_event->clear();
