@@ -1,0 +1,358 @@
+#include "tdrstyle.C"
+#include "library.h"
+
+#include <TCanvas.h>
+#include <TFile.h>
+#include <TH1F.h>
+#include <TTree.h>
+
+void distributionComparison(TString detector, TString variable, TString var_short, TString energy,
+                            TString dc, TString rhoc, TString of,
+                            float xmin, float xmax, float ymax, int bins,
+                            TString dc2 = "", TString rhoc2 = "", TString of2 = "", 
+                            TString dc3 = "", TString rhoc3 = "", TString of3 = ""){
+
+  TString settings = energy+"GeV_"+rhoc+"rhoc_"+of+"of";
+  if(dc2 != "" && rhoc2 != "" && of2 != "") {
+    settings += "_"+dc2+"_"+rhoc2+"rhoc_"+of2+"of";
+  }
+  if(dc3 != "" && rhoc3 != "" && of3 != "") {
+    settings += "_"+dc3+"_"+rhoc3+"rhoc_"+of3+"of";
+  }
+
+  setTDRStyle();
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+
+  TString detectorLabel = detlabelFromDet(detector);
+  TString folder = folderFromDet(detector);
+  TString fileName1 = folder+"/"+filenameFromDet(detector, energy, dc, rhoc, of);
+  TString fileName2 = folder+"/"+filenameFromDet(detector, energy, dc2, rhoc2, of2);
+  TString fileName3 = folder+"/"+filenameFromDet(detector, energy, dc3, rhoc3, of3);
+
+  TString ntupleName = "CLUEClusters";
+  if( detector == "lar"){
+    ntupleName = "CaloClueClusters";
+  }
+
+  TH1F* histo1 = histosFromNtuples(fileName1, variable, ntupleName, xmin, xmax, bins);
+  float ratio = (xmax-xmin)/bins;
+  histo1->GetXaxis()->SetTitle(variable);
+  if(variable=="totEnergyHits"){
+    //histo1->GetXaxis()->SetTitle(TString::Format("Total energy [GeV/%.2f]", ratio));
+    histo1->GetXaxis()->SetTitle("Total energy [GeV]");
+  } else if(variable=="totEnergyHits/MCEnergy"){
+    histo1->GetXaxis()->SetTitle("E_{reco}/E_{MC}");
+  }
+  histo1->GetYaxis()->SetTitle("a.u.");
+  histo1->GetYaxis()->SetTitleOffset(1.4);
+  histo1->SetLineColor(kCyan+1);
+  histo1->SetMarkerColor(kCyan+1);
+  histo1->SetMarkerStyle(20);
+  histo1->SetLineWidth(3);
+  histo1->SetLineStyle(1);
+  histo1->SetStats(0);
+  histo1->Scale(1./histo1->Integral());
+
+  TH1F* histo2;
+  if(dc2 != "" && rhoc2 != "" && of2 != "") {
+    histo2 = histosFromNtuples(fileName2, variable, ntupleName, xmin, xmax, bins);
+    histo2->SetLineColor(kCyan+3);
+    histo2->SetMarkerColor(kCyan+3);
+    histo2->SetMarkerStyle(24);
+    histo2->SetLineWidth(2);
+    histo2->SetLineStyle(1);
+    histo2->Scale(1./histo2->Integral());
+  }
+
+  TH1F* histo3;
+  if(dc3 != "" && rhoc3 != "" && of3 != "") {
+    histo3 = histosFromNtuples(fileName3, variable, "CaloClueClusters", xmin, xmax, bins);
+    histo3->SetLineColor(kBlue);
+    histo3->SetMarkerColor(kBlue);
+    histo2->SetMarkerStyle(20);
+    histo2->SetMarkerSize(0.5);
+    histo3->SetLineWidth(1);
+    histo3->SetLineStyle(1);
+    histo3->Scale(1./histo3->Integral());
+  }
+
+  histo1->SetMinimum(0.0);
+  histo1->SetMaximum(ymax);
+
+  TString canvasName = "cProf_"+var_short+"_"+settings;
+  TCanvas *c_var = new TCanvas(canvasName,canvasName, 50, 50, 600, 600);
+  gStyle->SetOptStat(0);
+  c_var->SetRightMargin(0.06);
+  c_var->cd();
+  histo1->Draw("PLE");
+
+  histo1->Fit("gaus", "", "", xmin, xmax);
+  TF1 *fit1 = histo1->GetFunction("gaus");
+  fit1->SetLineColor(kCyan+1); 
+  fit1->SetLineStyle(2);
+  fit1->Draw("same");
+
+  TLegend* t1 = new TLegend(0.6220736,0.613913,0.9247492,0.9339133);
+  TString header = detectorLabel+", "+energy+" GeV gamma";
+  if(dc == dc2 && dc == dc3){
+    header += ", d_{c} = "+dc;
+  }
+  TString title1 = " o_{f} = "+of+", #rho_{c} = "+rhoc[0]+"."+rhoc[2]+rhoc[3];
+  if((dc != dc2 && dc2 != "")|| (dc != dc3 && dc3 != "") ){
+    title1 += ", d_{c} = "+dc;
+  }
+  t1->SetHeader(header);
+  t1->AddEntry(histo1, title1, "pl");
+  t1->AddEntry((TObject*)0, TString::Format("#mu = %.3f #pm %.3f", fit1->GetParameter(1), fit1->GetParError(1)), "");
+  t1->AddEntry((TObject*)0, TString::Format("#sigma = %.3f #pm %.3f", fit1->GetParameter(2), fit1->GetParError(2)), "");
+
+  if(dc2 != "" && rhoc2 != "" && of2 != "") {
+    histo2->Draw("samePLE");
+    histo2->Fit("gaus", "", "", xmin, xmax);
+    TF1 *fit2 = histo2->GetFunction("gaus");
+    fit2->SetLineColor(kCyan+3); 
+    fit2->SetLineStyle(2);
+    fit2->Draw("same");
+    TString title2 = "o_{f} = "+of2+", #rho_{c} = "+rhoc2[0]+"."+rhoc2[2]+rhoc2[3];
+    if(dc2 != dc || (dc2 != dc3 && dc3 != "") ){
+      title2 += ", d_{c} = "+dc2;
+    }
+    t1->AddEntry(histo2, title2, "pl");
+    t1->AddEntry((TObject*)0, TString::Format("#mu = %.3f #pm %.3f", fit2->GetParameter(1), fit2->GetParError(1)), "");
+    t1->AddEntry((TObject*)0, TString::Format("#sigma = %.3f #pm %.3f", fit2->GetParameter(2), fit2->GetParError(2)), "");
+  }
+  if(dc3 != "" && rhoc3 != "" && of3 != "") {
+    histo3->Draw("samePLE");
+    histo3->Fit("gaus", "", "", xmin, xmax);
+    TF1 *fit3 = histo3->GetFunction("gaus");
+    fit3->SetLineColor(kBlue); 
+    fit3->SetLineStyle(2);
+    fit3->Draw("same");
+    TString title3 = " o_{f} = "+of3+", #rho_{c} = "+rhoc3[0]+"."+rhoc3[2]+rhoc3[3];
+    if(dc3 != dc || dc3 != dc2 ){
+      title3 += ", d_{c} = "+dc3;
+    }
+    t1->AddEntry(histo3, title3, "pl");
+    t1->AddEntry((TObject*)0, TString::Format("#mu = %.3f #pm %.3f", fit3->GetParameter(1), fit3->GetParError(1)), "");
+    t1->AddEntry((TObject*)0, TString::Format("#sigma = %.3f #pm %.3f", fit3->GetParameter(2), fit3->GetParError(2)), "");
+  }
+  t1->Draw("same");
+  c_var->Draw();
+
+  TString plotName = folder + "/" + variable+"_" + settings;
+  c_var->SaveAs(plotName+".pdf", "pdf");
+  c_var->SaveAs(plotName+".eps", "eps");
+  c_var->SaveAs(plotName+".png", "png");
+
+  return;
+
+}
+
+
+void comparisonWithOtherClusteringAlgorithms(TString detector, TString variable, TString var_short, 
+                                             TString energy, TString dc, TString rhoc, TString of,
+                                             float xmin, float xmax, int bins, float ymax = 120, 
+                                             TString comparedTo = "PandoraClusters", TString comparedToSecond = ""){
+
+  TString settings = energy+"GeV_"+rhoc+"rhoc_"+of+"of";
+
+  setTDRStyle();
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+
+  TString detectorLabel = detlabelFromDet(detector);
+  TString folder = folderFromDet(detector);
+  TString fileName = folder+"/"+filenameFromDet(detector, energy, dc, rhoc, of);
+
+  // Open input file
+  auto f = TFile::Open(fileName);
+  if (!f || f->IsZombie()) {
+     return;
+  }
+
+  TString ntupleName = "CLUEClusters";
+  if( detector == "lar"){
+    ntupleName = "CaloClueClusters";
+  }
+
+  TNtuple *ntupleCLUE = (TNtuple*)f->Get(ntupleName);
+  TNtuple *ntupleOther = (TNtuple*)f->Get(comparedTo);
+  TNtuple *ntupleOther2 = (TNtuple*)f->Get(comparedToSecond);
+
+  TString histoNameCLUE = "h_"+var_short+"_CLUE_"+energy+"GeV";
+  TH1F* h_var_CLUE = new TH1F(histoNameCLUE, histoNameCLUE, bins, xmin, xmax);
+  float ratio = (xmax-xmin)/bins;
+  h_var_CLUE->GetXaxis()->SetTitle(variable);
+  if(variable=="totEnergyHits"){
+    h_var_CLUE->GetXaxis()->SetTitle("Total energy [GeV]");
+    //h_var_CLUE->GetXaxis()->SetTitle(TString::Format("Total energy [GeV/%.2f]", ratio));
+  } else if(variable=="totEnergyHits/MCEnergy"){
+    h_var_CLUE->GetXaxis()->SetTitle("E_{reco}/E_{MC}");
+  }
+  h_var_CLUE->GetYaxis()->SetTitle("a.u.");
+  h_var_CLUE->GetYaxis()->SetTitleOffset(1.4);
+  h_var_CLUE->SetLineColor(kRed+1);
+  h_var_CLUE->SetMarkerColor(kRed+1);
+  h_var_CLUE->SetLineWidth(3);
+  h_var_CLUE->SetLineStyle(1);
+  h_var_CLUE->SetMarkerStyle(21);
+  h_var_CLUE->SetStats(0);
+
+  TString histoNameOther = "h_"+var_short+"_Other_"+energy+"GeV";
+  TH1F* h_var_Other = new TH1F(histoNameOther, histoNameOther, bins, xmin, xmax);
+  h_var_Other->SetLineColor(kCyan+2);
+  h_var_Other->SetMarkerColor(kCyan+2);
+  h_var_Other->SetLineWidth(2);
+  h_var_Other->SetLineStyle(1);
+  h_var_Other->SetMarkerStyle(25);
+  h_var_Other->SetStats(0);
+
+  TString histoNameOther2 = "h_"+var_short+"_Other2_"+energy+"GeV";
+  TH1F* h_var_Other2 = new TH1F(histoNameOther2, histoNameOther2, bins, xmin, xmax);
+  h_var_Other2->SetLineColor(kCyan+4);
+  h_var_Other2->SetMarkerColor(kCyan+4);
+  h_var_Other2->SetLineWidth(2);
+  h_var_Other2->SetLineStyle(1);
+  h_var_Other2->SetMarkerStyle(22);
+  h_var_Other2->SetStats(0);
+
+  TCanvas *cTrash = new TCanvas();//,200,10,700,780);
+  if(comparedToSecond != "")
+    ntupleOther2->Draw(variable + " >> "+histoNameOther2);
+  ntupleOther->Draw(variable + " >> "+histoNameOther);
+  ntupleCLUE->Draw(variable + " >> "+histoNameCLUE);
+
+  h_var_CLUE->Scale(1./h_var_CLUE->Integral());
+  h_var_Other->Scale(1./h_var_Other->Integral());
+  h_var_Other2->Scale(1./h_var_Other2->Integral());
+  h_var_CLUE->SetMinimum(0.0);
+  h_var_CLUE->SetMaximum(ymax);
+
+  h_var_Other->Fit("gaus", "", "", xmin, xmax);
+  TF1 *fit_var_Other = h_var_Other->GetFunction("gaus");
+  fit_var_Other->SetLineColor(kCyan+2); 
+  fit_var_Other->SetLineStyle(3);
+  fit_var_Other->SetLineWidth(2);
+  fit_var_Other->Draw("same");
+
+  h_var_CLUE->Fit("gaus", "", "", xmin, xmax);
+  TF1 *fit_var_CLUE = h_var_CLUE->GetFunction("gaus");
+  fit_var_CLUE->SetLineColor(kRed+2); 
+  fit_var_CLUE->SetLineStyle(2);
+  fit_var_CLUE->SetLineWidth(3);
+  fit_var_CLUE->Draw("same");
+
+  TLegend* t1 = new TLegend(0.5518395,0.6347826,0.9130435,0.8973913);
+  if(comparedToSecond != ""){
+    t1 = new TLegend(0.5518395,0.4591304,0.9130435,0.8973913);
+  }
+  TString header = "#splitline{"+detectorLabel+", "+energy+" GeV gamma}";
+  header += "{o_{f} = "+of+", #rho_{c} = "+rhoc+"}";
+  t1->SetHeader(header);
+  t1->AddEntry(h_var_CLUE, "CLUE", "pl");
+  TString fitResults = "#splitline{"+TString::Format("#mu = %.3f #pm %.3f", fit_var_CLUE->GetParameter(1), fit_var_CLUE->GetParError(1))+"}";
+  fitResults = fitResults + "{"+TString::Format("#sigma = %.3f #pm %.3f", fit_var_CLUE->GetParameter(2), fit_var_CLUE->GetParError(2))+"}";
+  t1->AddEntry((TObject*)0, fitResults, "");
+  if(comparedTo == "CaloClusters"){
+    t1->AddEntry(h_var_Other, "Sliding Window", "pl");
+  } else if (comparedTo == "PandoraClusters") {
+    t1->AddEntry(h_var_Other, "Pandora", "pl");
+  } else {
+    t1->AddEntry(h_var_Other, comparedTo, "pl");
+  }
+  TString fitResultsOther = "#splitline{"+TString::Format("#mu = %.3f #pm %.3f", fit_var_Other->GetParameter(1), fit_var_Other->GetParError(1))+"}";
+  fitResultsOther = fitResultsOther + "{"+TString::Format("#sigma = %.3f #pm %.3f", fit_var_Other->GetParameter(2), fit_var_Other->GetParError(2))+"}";
+  t1->AddEntry((TObject*)0, fitResultsOther, "");
+  if(comparedToSecond != ""){
+    h_var_Other2->Fit("gaus", "", "", xmin, xmax);
+    TF1 *fit_var_Other2 = h_var_Other2->GetFunction("gaus");
+    fit_var_Other2->SetLineColor(kBlue+2); 
+    fit_var_Other2->SetLineStyle(4);
+    fit_var_Other2->SetLineWidth(1);
+    fit_var_Other2->Draw("same");
+
+    if(comparedToSecond == "CaloTopoClusters"){
+      t1->AddEntry(h_var_Other2, "Topological", "pl");
+    } else {
+      t1->AddEntry(h_var_Other2, comparedToSecond, "pl");
+    }
+    TString fitResultsOther2 = "#splitline{"+TString::Format("#mu = %.3f #pm %.3f", fit_var_Other2->GetParameter(1), fit_var_Other2->GetParError(1))+"}";
+    fitResultsOther2 = fitResultsOther2 + "{"+TString::Format("#sigma = %.3f #pm %.3f", fit_var_Other2->GetParameter(2), fit_var_Other2->GetParError(2))+"}";
+    t1->AddEntry((TObject*)0, fitResultsOther2, "");
+  }
+
+  TString canvasName = "cProf_"+var_short+"_"+settings;
+  TCanvas *c_var = new TCanvas(canvasName,canvasName, 50, 50, 600, 600);
+  gStyle->SetOptStat(0);
+  c_var->SetRightMargin(0.06);
+  c_var->cd();
+  h_var_CLUE->Draw("");
+  h_var_Other->Draw("same");
+  if(comparedToSecond != ""){
+    h_var_Other2->Draw("same");
+  }
+  t1->Draw("same");
+  c_var->Draw();
+
+  TString plotName = folder + "/" + variable;
+  if(comparedToSecond != "")
+    plotName += "_"+comparedToSecond;
+  plotName += "_"+comparedTo+"Comparison_" + settings;
+  std::cout << plotName << std::endl;
+  c_var->SaveAs(plotName+".png", "png");
+  c_var->SaveAs(plotName+".pdf", "pdf");
+  c_var->SaveAs(plotName+".eps", "eps");
+
+  return;
+
+}
+
+void energyPlots(){
+
+  //*** Tuning input parameters
+  // Histo comparison w/Pandora
+//  comparisonWithOtherClusteringAlgorithms("clicdet", "totEnergyHits", "ene", "10", "15.0", "0.02", "3.0", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "001", "2", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "003", "2", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "002", "1", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "001", "3", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "002", "3", 7.5, 12.5, 25);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "10", "003", "3", 7.5, 12.5, 25);
+
+  // Graph display and comparison
+//  distributionComparison("totEnergyHits", "ene", "10", "002", "3", 7.5, 12.5, 25);
+  //distributionComparison("cld", "totEnergyHits", "ene", "10", "15.0", "0.02", "3.0", 7.5, 12.5, 0.25, 25, "15.0","0.03", "3.0");
+//  distributionComparison("totEnergyHits", "ene", "10", "002", "1", 7.5, 12.5, 25, "002", "2", "002", "3");
+//  distributionComparison("totEnergyHits", "ene", "10", "40", "0.03", "3", 7.5, 12.5, 0.50, 25, "50","0.03", "3", "60","0.03", "3");
+
+  //*** Other energy points 
+  // Histo comparison w/Pandora 
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "20", 15.5, 25.5, 20);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "50", 40.5, 60.5, 50);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "100", "002", "3", 80.5, 120.5, 50);
+//  comparisonWithOtherClusteringAlgorithms("totEnergyHits", "ene", "200", 180.5, 220.5, 50);
+
+  // Graph display and comparison
+  //distributionComparison("lar", "totEnergyHits", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 0.4, 25);
+  comparisonWithOtherClusteringAlgorithms("lar","totEnergyHits", "ene", "2", "40.0", "0.03", "3.0", 1.3, 2.5, 25, 0.4, "CaloClusters", "CaloTopoClusters");
+  //comparisonWithOtherClusteringAlgorithms("totEnergy", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 0.4, "CorrectedCaloClusters", "CorrectedCaloTopoClusters");
+  //comparisonWithOtherClusteringAlgorithms("totEnergy", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 200, "CaloClusters");
+  //comparisonWithOtherClusteringAlgorithms("totEnergy", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 200, "CorrectedCaloClusters");
+  //comparisonWithOtherClusteringAlgorithms("lar", "totEnergyHits", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 0.4, "CaloClusters", "CaloTopoClusters");
+  //comparisonWithOtherClusteringAlgorithms("totEnergy", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 200, "CaloTopoClusters");
+  //comparisonWithOtherClusteringAlgorithms("totEnergy", "ene", "10", "40.0", "0.03", "3.0", 7.5, 12.5, 25, 200, "CorrectedCaloTopoClusters");
+
+  //comparisonWithOtherClusteringAlgorithms("totEnergyHits/MCEnergy", "rat_ene", "10", 0.8, 1.2, 25);
+  //comparisonWithOtherClusteringAlgorithms("totEnergyHits/MCEnergy", "rat_ene", "20", 0.8, 1.2, 25);
+  //comparisonWithOtherClusteringAlgorithms("totEnergyHits/MCEnergy", "rat_ene", "50", 0.8, 1.2, 25);
+  //comparisonWithOtherClusteringAlgorithms("totEnergyHits/MCEnergy", "rat_ene", "100", 0.9, 1.1, 25);
+  //comparisonWithOtherClusteringAlgorithms("totEnergyHits/MCEnergy", "rat_ene", "200", 0.9, 1.1, 25);
+
+  //CLICdet
+  //distributionComparison("cld", "totEnergyHits", "ene", "100", "15.0", "0.02", "3.0", 80.5, 120.5, 0.4, 25);
+//  comparisonWithOtherClusteringAlgorithms("clicdet", "totEnergyHits", "ene", "100", "15.0", "0.02", "3.0", 80.5, 120.5, 40, 0.3, "PandoraClusters");
+//  comparisonWithOtherClusteringAlgorithms("clicdet", "totEnergyHits", "ene", "10",  "15.0", "0.02", "3.0", 7.5, 12.5, 25, 0.3, "PandoraClusters");
+
+  return;
+}
